@@ -8,7 +8,7 @@ COPY package*.json ./
 ENV NPM_CONFIG_FETCH_RETRIES=5
 ENV NPM_CONFIG_FETCH_TIMEOUT=60000
 
-RUN npm install --legacy-peer-deps
+RUN npm install 
 
 COPY . .
 
