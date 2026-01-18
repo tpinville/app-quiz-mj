@@ -2,7 +2,17 @@ export default function QuestionCard({ question, questionNumber, selectedOption,
   return (
     <div className="question-card">
       <h3 className="question-number">Question {questionNumber}</h3>
-      <p className="question-text">{question.question_text}</p>
+      <p className="question-text" style={{ whiteSpace: 'pre-wrap' }}>{question.question_text}</p>
+      {question.image_url && (
+        <div className="question-image">
+          <img src={question.image_url} alt="Question illustration" />
+        </div>
+      )}
+      {question.song_url && (
+        <div className="question-audio">
+          <audio controls src={question.song_url} />
+        </div>
+      )}
       <div className="options-list">
         {question.options.map((option) => (
           <label

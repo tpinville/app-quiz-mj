@@ -13,19 +13,19 @@ export default function Results() {
   return (
     <div className="results-page">
       <div className="results-summary">
-        <h1>Quiz Complete!</h1>
+        <h1>Quiz Terminé !</h1>
         <div className="score-display">
           <div className="score-circle">
             <span className="score-value">{percentage}%</span>
           </div>
           <p className="score-text">
-            You got {score} out of {total_questions} questions correct
+            Vous avez obtenu {score} bonne(s) réponse(s) sur {total_questions} questions
           </p>
         </div>
       </div>
 
       <div className="results-details">
-        <h2>Question Review</h2>
+        <h2>Révision des Questions</h2>
         {questionResults.map((result, index) => (
           <div
             key={index}
@@ -40,11 +40,11 @@ export default function Results() {
             <p className="question-text">{result.question_text}</p>
             <div className="answers">
               <p>
-                <strong>Your answer:</strong> {result.selected_option}
+                <strong>Votre réponse :</strong> {result.selected_option}
               </p>
               {!result.is_correct && (
                 <p className="correct-answer">
-                  <strong>Correct answer:</strong> {result.correct_option}
+                  <strong>Bonne réponse :</strong> {result.correct_option}
                 </p>
               )}
             </div>
@@ -54,10 +54,10 @@ export default function Results() {
 
       <div className="results-actions">
         <Link to="/quiz" className="btn btn-primary">
-          Take Another Quiz
+          Rejouer
         </Link>
         <Link to="/history" className="btn btn-secondary">
-          View History
+          Voir l'Historique
         </Link>
       </div>
     </div>

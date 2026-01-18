@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { query, queryOne, run, lastInsertRowId, getDb } from '../database.js';
+import { query, queryOne, run, runInsert, getDb } from '../database.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
@@ -28,7 +28,7 @@ router.get('/questions', (req, res) => {
 // Create question with options
 router.post('/questions', (req, res) => {
   try {
-    const { question_text, options } = req.body;
+    const { question_text, image_url, song_url, options } = req.body;
 
     if (!question_text) {
       return res.status(400).json({ error: 'Question text is required' });
@@ -43,9 +43,8 @@ router.post('/questions', (req, res) => {
       return res.status(400).json({ error: 'At least one option must be marked as correct' });
     }
 
-    // Insert question
-    run('INSERT INTO questions (question_text) VALUES (?)', [question_text]);
-    const question_id = lastInsertRowId();
+    // Insert question and get its ID
+    const question_id = runInsert('INSERT INTO questions (question_text, image_url, song_url) VALUES (?, ?, ?)', [question_text, image_url || null, song_url || null]);
 
     // Insert options
     for (const option of options) {
@@ -70,15 +69,18 @@ router.post('/questions', (req, res) => {
 router.put('/questions/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { question_text, options } = req.body;
+    const { question_text, image_url, song_url, options } = req.body;
 
     const existing = queryOne('SELECT * FROM questions WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ error: 'Question not found' });
     }
 
-    if (question_text) {
-      run('UPDATE questions SET question_text = ? WHERE id = ?', [question_text, id]);
+    if (question_text !== undefined || image_url !== undefined || song_url !== undefined) {
+      const newText = question_text !== undefined ? question_text : existing.question_text;
+      const newImage = image_url !== undefined ? image_url : existing.image_url;
+      const newSong = song_url !== undefined ? song_url : existing.song_url;
+      run('UPDATE questions SET question_text = ?, image_url = ?, song_url = ? WHERE id = ?', [newText, newImage, newSong, id]);
     }
 
     if (options && Array.isArray(options)) {

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import apiClient from '../utils/apiClient';
 
 const AuthContext = createContext(null);
 
@@ -17,15 +18,8 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const userData = await res.json();
-        setUser(userData);
-      } else {
-        logout();
-      }
+      const userData = await apiClient.get('/auth/me');
+      setUser(userData);
     } catch (err) {
       console.error('Failed to fetch user:', err);
       logout();
@@ -35,17 +29,7 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (username, password) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Login failed');
-    }
-
+    const data = await apiClient.post('/auth/login', { username, password }, { auth: false });
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setUser(data.user);
@@ -53,17 +37,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (username, password) => {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Registration failed');
-    }
-
+    const data = await apiClient.post('/auth/register', { username, password }, { auth: false });
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setUser(data.user);

@@ -1,38 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useFetch, useMutation } from '../hooks/useFetch';
 import QuestionCard from '../components/QuestionCard';
 
 export default function Quiz() {
-  const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const { token } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
-
-  const fetchQuestions = async () => {
-    try {
-      const res = await fetch('/api/quiz/questions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load questions');
-      }
-      setQuestions(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: questions, loading, error, setError } = useFetch('/quiz/questions', { initialData: [] });
+  const { mutate: submitQuiz, loading: submitting } = useMutation('post');
 
   const handleSelect = (questionId, optionId) => {
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
@@ -53,11 +30,10 @@ export default function Quiz() {
   const handleSubmit = async () => {
     if (Object.keys(answers).length !== questions.length) {
       const unanswered = questions.length - Object.keys(answers).length;
-      setError(`Please answer all questions. ${unanswered} question(s) remaining.`);
+      setError(`Veuillez répondre à toutes les questions. ${unanswered} question(s) restante(s).`);
       return;
     }
 
-    setSubmitting(true);
     setError('');
 
     try {
@@ -66,37 +42,22 @@ export default function Quiz() {
         option_id
       }));
 
-      const res = await fetch('/api/quiz/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ answers: answersArray })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit quiz');
-      }
-
+      const data = await submitQuiz('/quiz/submit', { answers: answersArray });
       navigate('/results', { state: { results: data } });
     } catch (err) {
       setError(err.message);
-    } finally {
-      setSubmitting(false);
     }
   };
 
   if (loading) {
-    return <div className="loading">Loading questions...</div>;
+    return <div className="loading">Chargement des questions...</div>;
   }
 
   if (error && questions.length === 0) {
     return (
       <div className="quiz-page">
         <div className="error-message">{error}</div>
-        <p>No questions available. Please ask an admin to add some questions.</p>
+        <p>Aucune question disponible. Veuillez demander à un administrateur d'en ajouter.</p>
       </div>
     );
   }
@@ -104,7 +65,6 @@ export default function Quiz() {
   const currentQuestion = questions[currentIndex];
   const isFirstQuestion = currentIndex === 0;
   const isLastQuestion = currentIndex === questions.length - 1;
-  const currentAnswered = answers[currentQuestion?.id] !== undefined;
   const allAnswered = Object.keys(answers).length === questions.length;
 
   return (
@@ -112,7 +72,7 @@ export default function Quiz() {
       <div className="quiz-header">
         <h1>Quiz</h1>
         <p className="progress">
-          Question {currentIndex + 1} of {questions.length}
+          Question {currentIndex + 1} sur {questions.length}
         </p>
       </div>
 
@@ -123,7 +83,7 @@ export default function Quiz() {
         />
       </div>
       <p className="progress-text">
-        {Object.keys(answers).length} of {questions.length} answered
+        {Object.keys(answers).length} sur {questions.length} répondue(s)
       </p>
 
       {error && <div className="error-message">{error}</div>}
@@ -143,7 +103,7 @@ export default function Quiz() {
           className="btn btn-secondary"
           disabled={isFirstQuestion}
         >
-          Previous
+          Précédent
         </button>
 
         <div className="question-dots">
@@ -163,14 +123,14 @@ export default function Quiz() {
             className="btn btn-primary"
             disabled={submitting || !allAnswered}
           >
-            {submitting ? 'Submitting...' : 'Submit Quiz'}
+            {submitting ? 'Envoi en cours...' : 'Terminer le Quiz'}
           </button>
         ) : (
           <button
             onClick={handleNext}
             className="btn btn-primary"
           >
-            Next
+            Suivant
           </button>
         )}
       </div>

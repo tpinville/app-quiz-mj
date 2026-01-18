@@ -11,7 +11,7 @@ router.get('/questions', authenticateToken, (req, res) => {
   try {
     // Get random questions
     const questions = query(
-      `SELECT id, question_text FROM questions ORDER BY RANDOM() LIMIT ?`,
+      `SELECT id, question_text, image_url, song_url FROM questions ORDER BY RANDOM() LIMIT ?`,
       [QUESTIONS_PER_QUIZ]
     );
 
@@ -28,6 +28,8 @@ router.get('/questions', authenticateToken, (req, res) => {
       return {
         id: q.id,
         question_text: q.question_text,
+        image_url: q.image_url,
+        song_url: q.song_url,
         options
       };
     });

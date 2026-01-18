@@ -39,9 +39,25 @@ export async function initDb() {
     CREATE TABLE IF NOT EXISTS questions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       question_text TEXT NOT NULL,
+      image_url TEXT,
+      song_url TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Add image_url column if it doesn't exist (migration for existing DBs)
+  try {
+    db.run('ALTER TABLE questions ADD COLUMN image_url TEXT');
+  } catch (e) {
+    // Column already exists
+  }
+
+  // Add song_url column if it doesn't exist (migration for existing DBs)
+  try {
+    db.run('ALTER TABLE questions ADD COLUMN song_url TEXT');
+  } catch (e) {
+    // Column already exists
+  }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS options (
@@ -246,7 +262,18 @@ export function run(sql, params = []) {
   saveDb();
 }
 
+// Helper function to run an insert and return the new row ID
+export function runInsert(sql, params = []) {
+  db.run(sql, params);
+  // Get last_insert_rowid BEFORE export (export resets it to 0)
+  const result = db.exec('SELECT last_insert_rowid()');
+  const lastId = result[0].values[0][0];
+  saveDb();
+  return lastId;
+}
+
 // Get the last inserted row id
+// WARNING: This returns 0 if called after saveDb() due to db.export() resetting it
 export function lastInsertRowId() {
   const result = db.exec('SELECT last_insert_rowid()');
   return result[0].values[0][0];

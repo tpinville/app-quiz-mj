@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
+import { useFetch, useMutation } from '../hooks/useFetch';
 
 export default function Admin() {
-  const [questions, setQuestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
-  const { token } = useAuth();
 
   // Form state
   const [questionText, setQuestionText] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [songUrl, setSongUrl] = useState('');
   const [options, setOptions] = useState([
     { option_text: '', is_correct: false },
     { option_text: '', is_correct: false },
@@ -18,29 +16,15 @@ export default function Admin() {
     { option_text: '', is_correct: false }
   ]);
 
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
-
-  const fetchQuestions = async () => {
-    try {
-      const res = await fetch('/api/admin/questions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load questions');
-      }
-      setQuestions(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: questions, loading, error, setError, refetch } = useFetch('/admin/questions', { initialData: [] });
+  const { mutate: createQuestion, loading: creating } = useMutation('post');
+  const { mutate: updateQuestion, loading: updating } = useMutation('put');
+  const { mutate: deleteQuestion } = useMutation('delete');
 
   const resetForm = () => {
     setQuestionText('');
+    setImageUrl('');
+    setSongUrl('');
     setOptions([
       { option_text: '', is_correct: false },
       { option_text: '', is_correct: false },
@@ -54,6 +38,8 @@ export default function Admin() {
   const handleEdit = (question) => {
     setEditingQuestion(question);
     setQuestionText(question.question_text);
+    setImageUrl(question.image_url || '');
+    setSongUrl(question.song_url || '');
     const formOptions = question.options.map((o) => ({
       option_text: o.option_text,
       is_correct: o.is_correct === 1
@@ -77,78 +63,62 @@ export default function Admin() {
 
     const validOptions = options.filter((o) => o.option_text.trim());
     if (validOptions.length < 2) {
-      setError('At least 2 options are required');
+      setError('Au moins 2 options sont requises');
       return;
     }
 
     if (!validOptions.some((o) => o.is_correct)) {
-      setError('At least one option must be marked as correct');
+      setError('Au moins une option doit être marquée comme correcte');
       return;
     }
 
     try {
-      const url = editingQuestion
-        ? `/api/admin/questions/${editingQuestion.id}`
-        : '/api/admin/questions';
-      const method = editingQuestion ? 'PUT' : 'POST';
+      const payload = {
+        question_text: questionText,
+        image_url: imageUrl || null,
+        song_url: songUrl || null,
+        options: validOptions
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          question_text: questionText,
-          options: validOptions
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to save question');
+      if (editingQuestion) {
+        await updateQuestion(`/admin/questions/${editingQuestion.id}`, payload);
+      } else {
+        await createQuestion('/admin/questions', payload);
       }
 
       resetForm();
-      fetchQuestions();
+      refetch();
     } catch (err) {
       setError(err.message);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this question?')) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette question ?')) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/questions/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to delete question');
-      }
-
-      fetchQuestions();
+      await deleteQuestion(`/admin/questions/${id}`);
+      refetch();
     } catch (err) {
       setError(err.message);
     }
   };
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <div className="loading">Chargement...</div>;
   }
+
+  const saving = creating || updating;
 
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>Question Management</h1>
+        <h1>Gestion des Questions</h1>
         {!showForm && (
           <button onClick={() => setShowForm(true)} className="btn btn-primary">
-            Add Question
+            Ajouter une Question
           </button>
         )}
       </div>
@@ -157,7 +127,7 @@ export default function Admin() {
 
       {showForm && (
         <div className="question-form-container">
-          <h2>{editingQuestion ? 'Edit Question' : 'Add New Question'}</h2>
+          <h2>{editingQuestion ? 'Modifier la Question' : 'Nouvelle Question'}</h2>
           <form onSubmit={handleSubmit} className="question-form">
             <div className="form-group">
               <label htmlFor="questionText">Question</label>
@@ -170,8 +140,40 @@ export default function Admin() {
               />
             </div>
 
+            <div className="form-group">
+              <label htmlFor="imageUrl">URL de l'image (optionnel)</label>
+              <input
+                type="url"
+                id="imageUrl"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://exemple.com/image.jpg"
+              />
+              {imageUrl && (
+                <div className="image-preview">
+                  <img src={imageUrl} alt="Aperçu" onError={(e) => e.target.style.display = 'none'} />
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="songUrl">URL de la chanson (optionnel)</label>
+              <input
+                type="url"
+                id="songUrl"
+                value={songUrl}
+                onChange={(e) => setSongUrl(e.target.value)}
+                placeholder="https://exemple.com/chanson.mp3"
+              />
+              {songUrl && (
+                <div className="audio-preview">
+                  <audio controls src={songUrl} onError={(e) => e.target.style.display = 'none'} />
+                </div>
+              )}
+            </div>
+
             <div className="options-form">
-              <label>Options (mark the correct one)</label>
+              <label>Options (cochez la bonne réponse)</label>
               {options.map((option, index) => (
                 <div key={index} className="option-input">
                   <input
@@ -195,18 +197,18 @@ export default function Admin() {
                         setOptions(newOptions);
                       }}
                     />
-                    Correct
+                    Correcte
                   </label>
                 </div>
               ))}
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                {editingQuestion ? 'Update' : 'Create'} Question
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving ? 'Enregistrement...' : (editingQuestion ? 'Modifier' : 'Créer')} {!saving && 'la Question'}
               </button>
               <button type="button" onClick={resetForm} className="btn btn-secondary">
-                Cancel
+                Annuler
               </button>
             </div>
           </form>
@@ -214,14 +216,24 @@ export default function Admin() {
       )}
 
       <div className="questions-list-admin">
-        <h2>All Questions ({questions.length})</h2>
+        <h2>Toutes les Questions ({questions.length})</h2>
         {questions.length === 0 ? (
-          <p className="no-data">No questions yet. Add some to get started!</p>
+          <p className="no-data">Aucune question. Ajoutez-en pour commencer !</p>
         ) : (
           questions.map((question) => (
             <div key={question.id} className="question-item">
               <div className="question-content">
-                <p className="question-text">{question.question_text}</p>
+                <p className="question-text" style={{ whiteSpace: 'pre-wrap' }}>{question.question_text}</p>
+                {question.image_url && (
+                  <div className="question-image-preview">
+                    <img src={question.image_url} alt="Question" />
+                  </div>
+                )}
+                {question.song_url && (
+                  <div className="question-audio-preview">
+                    <audio controls src={question.song_url} />
+                  </div>
+                )}
                 <ul className="options-preview">
                   {question.options.map((option) => (
                     <li
@@ -229,7 +241,7 @@ export default function Admin() {
                       className={option.is_correct ? 'correct' : ''}
                     >
                       {option.option_text}
-                      {option.is_correct === 1 && <span className="correct-badge">Correct</span>}
+                      {option.is_correct === 1 && <span className="correct-badge">Correcte</span>}
                     </li>
                   ))}
                 </ul>
@@ -239,13 +251,13 @@ export default function Admin() {
                   onClick={() => handleEdit(question)}
                   className="btn btn-small"
                 >
-                  Edit
+                  Modifier
                 </button>
                 <button
                   onClick={() => handleDelete(question.id)}
                   className="btn btn-small btn-danger"
                 >
-                  Delete
+                  Supprimer
                 </button>
               </div>
             </div>

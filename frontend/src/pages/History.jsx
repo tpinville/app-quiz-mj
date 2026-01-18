@@ -1,45 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useFetch } from '../hooks/useFetch';
 
 export default function History() {
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const { token } = useAuth();
-
-  useEffect(() => {
-    fetchHistory();
-  }, []);
-
-  const fetchHistory = async () => {
-    try {
-      const res = await fetch('/api/scores/history', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load history');
-      }
-      setHistory(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: history, loading, error } = useFetch('/scores/history', { initialData: [] });
 
   if (loading) {
-    return <div className="loading">Loading history...</div>;
+    return <div className="loading">Chargement de l'historique...</div>;
   }
 
   return (
     <div className="history-page">
-      <h1>Your Quiz History</h1>
+      <h1>Votre Historique de Quiz</h1>
 
       {error && <div className="error-message">{error}</div>}
 
       {history.length === 0 ? (
-        <p className="no-data">You haven't taken any quizzes yet.</p>
+        <p className="no-data">Vous n'avez pas encore participé à un quiz.</p>
       ) : (
         <div className="history-table-container">
           <table className="data-table">
@@ -47,7 +22,7 @@ export default function History() {
               <tr>
                 <th>#</th>
                 <th>Score</th>
-                <th>Percentage</th>
+                <th>Pourcentage</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -63,7 +38,7 @@ export default function History() {
                       {attempt.percentage}%
                     </span>
                   </td>
-                  <td>{new Date(attempt.completed_at).toLocaleDateString()}</td>
+                  <td>{new Date(attempt.completed_at).toLocaleDateString('fr-FR')}</td>
                 </tr>
               ))}
             </tbody>

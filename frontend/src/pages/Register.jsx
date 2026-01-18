@@ -16,7 +16,7 @@ export default function Register() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Les mots de passe ne correspondent pas');
       return;
     }
 
@@ -35,11 +35,11 @@ export default function Register() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h2>Register</h2>
+        <h2>Inscription</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">Nom d'utilisateur</label>
             <input
               type="text"
               id="username"
@@ -50,7 +50,7 @@ export default function Register() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Mot de passe</label>
             <input
               type="password"
               id="password"
@@ -61,7 +61,7 @@ export default function Register() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
             <input
               type="password"
               id="confirmPassword"
@@ -71,11 +71,11 @@ export default function Register() {
             />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Creating account...' : 'Register'}
+            {loading ? 'Création du compte...' : "S'inscrire"}
           </button>
         </form>
         <p className="auth-link">
-          Already have an account? <Link to="/login">Login</Link>
+          Déjà un compte ? <Link to="/login">Se connecter</Link>
         </p>
       </div>
     </div>

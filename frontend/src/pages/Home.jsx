@@ -7,35 +7,35 @@ export default function Home() {
   return (
     <div className="home-page">
       <div className="hero">
-        <h1>Welcome to Quiz App</h1>
-        <p>Test your knowledge with our fun quizzes!</p>
+        <h1>Bienvenue sur App Quiz MJ</h1>
+        <p>Testez vos connaissances avec nos quiz amusants !</p>
         {isAuthenticated ? (
           <Link to="/quiz" className="btn btn-primary btn-large">
-            Start Quiz
+            Commencer le Quiz
           </Link>
         ) : (
           <div className="hero-actions">
             <Link to="/login" className="btn btn-primary btn-large">
-              Login to Start
+              Se connecter
             </Link>
             <Link to="/register" className="btn btn-secondary btn-large">
-              Create Account
+              Créer un compte
             </Link>
           </div>
         )}
       </div>
       <div className="features">
         <div className="feature">
-          <h3>Multiple Choice Questions</h3>
-          <p>Answer questions from various topics</p>
+          <h3>Questions à Choix Multiples</h3>
+          <p>Répondez à des questions sur divers sujets</p>
         </div>
         <div className="feature">
-          <h3>Track Your Progress</h3>
-          <p>View your score history and improvement</p>
+          <h3>Suivez Votre Progression</h3>
+          <p>Consultez votre historique et votre évolution</p>
         </div>
         <div className="feature">
-          <h3>Compete with Others</h3>
-          <p>See how you rank on the leaderboard</p>
+          <h3>Affrontez les Autres</h3>
+          <p>Découvrez votre classement</p>
         </div>
       </div>
     </div>

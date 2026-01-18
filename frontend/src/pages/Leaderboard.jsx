@@ -1,50 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useFetch } from '../hooks/useFetch';
 
 export default function Leaderboard() {
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetchLeaderboard();
-  }, []);
-
-  const fetchLeaderboard = async () => {
-    try {
-      const res = await fetch('/api/scores/leaderboard');
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load leaderboard');
-      }
-      setLeaderboard(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: leaderboard, loading, error } = useFetch('/scores/leaderboard', {
+    auth: false,
+    initialData: []
+  });
 
   if (loading) {
-    return <div className="loading">Loading leaderboard...</div>;
+    return <div className="loading">Chargement du classement...</div>;
   }
 
   return (
     <div className="leaderboard-page">
-      <h1>Leaderboard</h1>
+      <h1>Classement</h1>
 
       {error && <div className="error-message">{error}</div>}
 
       {leaderboard.length === 0 ? (
-        <p className="no-data">No scores yet. Be the first to take a quiz!</p>
+        <p className="no-data">Aucun score pour le moment. Soyez le premier à jouer !</p>
       ) : (
         <div className="leaderboard-table-container">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Rank</th>
-                <th>User</th>
+                <th>Rang</th>
+                <th>Joueur</th>
                 <th>Score</th>
-                <th>Percentage</th>
+                <th>Pourcentage</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -61,7 +43,7 @@ export default function Leaderboard() {
                   <td>
                     <span className="percentage good">{entry.percentage}%</span>
                   </td>
-                  <td>{new Date(entry.completed_at).toLocaleDateString()}</td>
+                  <td>{new Date(entry.completed_at).toLocaleDateString('fr-FR')}</td>
                 </tr>
               ))}
             </tbody>
